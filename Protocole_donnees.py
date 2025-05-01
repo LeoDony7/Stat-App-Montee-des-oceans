@@ -52,7 +52,22 @@ def rename_colonnes(dataframe):
     dataframe.rename(columns=nouveaux_noms, inplace=True)
 
 
-## Troisième étape : Désaisonnaliser les colonnes 
+## Troisème étape : Gérer les données manquantes
+
+def interpolation(dataframe):
+
+    '''
+    Fonction qui interpole les données manquantes sur notre jeu de données.
+    Modifie le dataframe passé en entrée.
+    '''
+
+    dataframe['CO2_need_desaison'] = dataframe['CO2_need_desaison'].interpolate(method = 'linear')
+    dataframe['greenland_mass'] = dataframe['greenland_mass'].interpolate(method = 'linear')
+    dataframe['antarctica_mass'] = dataframe['antarctica_mass'].interpolate(method = 'linear')
+    ## Voir comment interpoler avec 'pchip' pour les 2 derniers
+
+
+## Quatrième étape : Désaisonnaliser les colonnes 
 
 def desaison(dataframe):
 
@@ -81,9 +96,29 @@ def Base_desaison(dataframe):
 
     rename_colonnes(dataframe)
 
+    interpolation(dataframe)
+
     desaison(dataframe)
 
     # Suppression des colonnes non-désaisonnalisées
     colonnes_a_supprimer = [col for col in dataframe.columns if col.endswith('_need_desaison')]
 
     return dataframe.drop(columns=colonnes_a_supprimer)
+
+
+## Cinquième étape : Filtrer sur la période commune
+
+def Dataframe_filtre_periode(dataframe):
+
+    '''
+    Fonction qui renvoie un Dataframe restreint à la période sur laquelle on possède toutes les données.
+    '''
+
+    # Selection de la période : du 1 Janvier 2011 au 31 décembre 2022
+    filtre = (dataframe['year_month'] >= '2011-01-01') & (dataframe['year_month'] <= '2022-12-31')
+
+    return dataframe[filtre].sort_values('year_month')
+
+
+
+
