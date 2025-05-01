@@ -3,7 +3,20 @@
 # Imports
 import os
 import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
 
+##### PIPELINE #####
+
+# DF = chargerBDD('Base_Statapp.csv')
+
+# DF_filtre = Dataframe_filtre_periode(DF)
+
+# DF_propre = Base_nettoye(DF_filtre)
+
+# DF_desaison = Base_desaison(DF_propre)
+
+
+##### Explication des étapes #####
 
 ### Première étape : récupération de la base de données initiale
 
@@ -22,7 +35,21 @@ def chargerBDD(nom_fichier):
     return pd.read_csv(chemin_csv)
 
 
-## Deuxième étape : renommer les colonnes
+### Deuxième étape : Filtrer sur la période commune
+
+def Dataframe_filtre_periode(dataframe):
+
+    '''
+    Fonction qui renvoie un Dataframe restreint à la période sur laquelle on possède toutes les données.
+    '''
+
+    # Selection de la période : du 1 Janvier 2011 au 31 décembre 2022
+    filtre = (dataframe['year_month'] >= '2011-01-01') & (dataframe['year_month'] <= '2022-12-31')
+
+    return dataframe[filtre].sort_values('year_month')
+
+
+### Troisième étape : renommer les colonnes
 
 def formatage_date(dataframe):
 
@@ -52,7 +79,7 @@ def rename_colonnes(dataframe):
     dataframe.rename(columns=nouveaux_noms, inplace=True)
 
 
-## Troisème étape : Gérer les données manquantes
+### Quatrième étape : Gérer les données manquantes
 
 def interpolation(dataframe):
 
@@ -67,9 +94,24 @@ def interpolation(dataframe):
     ## Voir comment interpoler avec 'pchip' pour les 2 derniers
 
 
-## Quatrième étape : Désaisonnaliser les colonnes 
+def Base_nettoye(dataframe):
 
-def desaison(dataframe):
+    '''
+    Fonction qui renvoie un nouveau dataframe selon les fonctions de nettoyage et d'interpolation.
+    '''
+
+    formatage_date(dataframe)
+
+    rename_colonnes(dataframe)
+
+    interpolation(dataframe)
+
+    return dataframe
+
+
+### Cinquième étape : Désaisonnaliser les colonnes 
+
+def desaison_shift(dataframe):
 
     '''
     Fonction qui applique une désaisonnalisation sur toutes les colonnes du DataFrame contenant le suffixe '_need_desaison'.
@@ -82,7 +124,22 @@ def desaison(dataframe):
             nom_base = col.replace('_need_desaison', '')
             dataframe[nom_base] = dataframe[col] - dataframe[col].shift(12)
 
-## Récupération de la base désaisonnalisée
+
+def desaison_decomp(dataframe):
+
+    '''
+    Fonction qui applique une désaisonnalisation sur toutes les colonnes du DataFrame contenant le suffixe '_need_desaison'.
+    Le résultat est stocké dans une nouvelle colonne sans ce suffixe.
+    On applique la désaisonnalisation suivante : X_{t} - saison(X_{t})
+    '''
+
+    for col in dataframe.columns:
+        if col.endswith('_need_desaison'):
+            nom_base = col.replace('_need_desaison', '')
+            decomposition = seasonal_decompose(dataframe[col], model='additive', period=12)
+            dataframe[nom_base] = dataframe[col] - decomposition.seasonal
+
+# Récupération de la base désaisonnalisée
 
 def Base_desaison(dataframe):
 
@@ -91,34 +148,16 @@ def Base_desaison(dataframe):
     En appliquant les fonctions précédentes.
     '''
 
-    # Application des transformations précédentes
-    formatage_date(dataframe)
+    # Application de la désaison
+    desaison_shift(dataframe)
 
-    rename_colonnes(dataframe)
+    ## /!\ choisir si on met cette désaison ou bien l'autre
 
-    interpolation(dataframe)
-
-    desaison(dataframe)
 
     # Suppression des colonnes non-désaisonnalisées
     colonnes_a_supprimer = [col for col in dataframe.columns if col.endswith('_need_desaison')]
 
     return dataframe.drop(columns=colonnes_a_supprimer)
-
-
-## Cinquième étape : Filtrer sur la période commune
-
-def Dataframe_filtre_periode(dataframe):
-
-    '''
-    Fonction qui renvoie un Dataframe restreint à la période sur laquelle on possède toutes les données.
-    '''
-
-    # Selection de la période : du 1 Janvier 2011 au 31 décembre 2022
-    filtre = (dataframe['year_month'] >= '2011-01-01') & (dataframe['year_month'] <= '2022-12-31')
-
-    return dataframe[filtre].sort_values('year_month')
-
 
 
 

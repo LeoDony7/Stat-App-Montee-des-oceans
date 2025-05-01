@@ -1,44 +1,24 @@
 from Protocole_donnees import *
 from Graphiques_Base import *
 
-BDD = chargerBDD('Base_Statapp.csv')
-
-'''BDD_desaison = Base_desaison(BDD)
-
-BDD_filtre = Dataframe_filtre_periode(BDD_desaison)
 
 
-tracer_variable(BDD_desaison,'sea_temperature')
-tracer_df(BDD_desaison)'''
+##### Test de la pipeline de préparation des données #####
 
-### test sur la désaison
+DF = chargerBDD('Base_Statapp.csv')
 
-from statsmodels.tsa.seasonal import seasonal_decompose
+DF_filtre = Dataframe_filtre_periode(DF)
 
+DF_propre = Base_nettoye(DF_filtre)
 
-formatage_date(BDD)
+DF_desaison = Base_desaison(DF_propre)
 
-rename_colonnes(BDD)
+tracer_df(DF_desaison)
 
-interpolation(BDD)
-
-BDD = Dataframe_filtre_periode(BDD)
+##########################################################
 
 
-################################# Tests sur saisonnalité
-
-# Désaisonnalisation
-decomposition = seasonal_decompose(BDD['CO2_need_desaison'], model='additive', period=12)
-BDD['CO2_deseasonalized'] = BDD['CO2_need_desaison'] - decomposition.seasonal
-
-decomp = seasonal_decompose(BDD['CO2_deseasonalized'], model='additive', period=12)
-# Visualiser pour vérifier
-decomp.plot()
-plt.suptitle("Décomposition de la série CO2")
-plt.tight_layout()
-plt.show()
-
-
+##### Tests sur saisonnalité ######
 
 # Code pour visualiser le truc de saisonnalité et tendance pour toutes les var en même temps.
 '''variables = list(BDD.columns[1:])
@@ -65,3 +45,5 @@ plt.tight_layout()
 plt.suptitle("Décomposition saisonnière de chaque variable", fontsize=16, y=1.02)
 plt.show()
 '''
+
+###################################
