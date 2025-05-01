@@ -7,7 +7,7 @@ from Graphiques_Base import *
 
 DF = chargerBDD('Base_Statapp.csv')
 
-DF_filtre = Dataframe_filtre_periode(DF)
+DF_filtre = Dataframe_filtre_periode(DF,['2011-01-01','2022-12-31'])
 
 DF_propre = Base_nettoye(DF_filtre)
 
@@ -16,6 +16,9 @@ DF_desaison = Base_desaison(DF_propre)
 tracer_df(DF_desaison)
 
 ##########################################################
+
+
+##### Regression
 
 
 ##### Tests sur saisonnalité ######

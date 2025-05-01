@@ -9,7 +9,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 # DF = chargerBDD('Base_Statapp.csv')
 
-# DF_filtre = Dataframe_filtre_periode(DF)
+# DF_filtre = Dataframe_filtre_periode(DF,['2011-01-01','2022-12-31'])
 
 # DF_propre = Base_nettoye(DF_filtre)
 
@@ -37,14 +37,16 @@ def chargerBDD(nom_fichier):
 
 ### Deuxième étape : Filtrer sur la période commune
 
-def Dataframe_filtre_periode(dataframe):
+def Dataframe_filtre_periode(dataframe,periode):
 
     '''
     Fonction qui renvoie un Dataframe restreint à la période sur laquelle on possède toutes les données.
+    periode est un couple de str au format ['YYYY-MM-DD','YYYY-MM-DD']
     '''
 
-    # Selection de la période : du 1 Janvier 2011 au 31 décembre 2022
-    filtre = (dataframe['year_month'] >= '2011-01-01') & (dataframe['year_month'] <= '2022-12-31')
+    # Selection de la période 
+    debut, fin = periode     
+    filtre = (dataframe['year_month'] >= debut) & (dataframe['year_month'] <= fin)
 
     return dataframe[filtre].sort_values('year_month')
 
