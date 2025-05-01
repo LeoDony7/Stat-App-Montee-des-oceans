@@ -1,6 +1,6 @@
 from Protocole_donnees import *
 from Graphiques_Base import *
-
+from Regression import *
 
 
 ##### Test de la pipeline de préparation des données #####
@@ -13,12 +13,24 @@ DF_propre = Base_nettoye(DF_filtre)
 
 DF_desaison = Base_desaison(DF_propre)
 
-tracer_df(DF_desaison)
+# test. A mettre dans la pipeline si nécéssaire
+DF_final = Dataframe_filtre_periode(DF_desaison,['2012-01-01','2022-12-31'])
+
+
+'''tracer_df(DF_desaison)'''
 
 ##########################################################
 
 
-##### Regression
+##### Regression ######
+
+'''doublons = DF[DF.duplicated(subset='year_month', keep=False)]
+print(doublons)'''
+
+
+Regression_simple(DF_final,'sea_temperature')
+
+#######################
 
 
 ##### Tests sur saisonnalité ######

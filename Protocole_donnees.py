@@ -28,11 +28,13 @@ def chargerBDD(nom_fichier):
 
     chemin_script = os.path.dirname(__file__)
     chemin_csv = os.path.join(chemin_script,nom_fichier)
-    ## Version alternative si on déplace le fichier
-    ## chemin_csv = os.path.join(chemin_script, '..', 'data', nom_fichier)  # fichier dans le dossier "data"
     chemin_csv = os.path.abspath(chemin_csv)
+    dataframe = pd.read_csv(chemin_csv)
 
-    return pd.read_csv(chemin_csv)
+    # Suppression des lignes présentes en double dans le fichier csv
+    dataframe_no_duplicate = dataframe.drop_duplicates(subset='year_month', keep='first')
+
+    return dataframe_no_duplicate
 
 
 ### Deuxième étape : Filtrer sur la période commune
