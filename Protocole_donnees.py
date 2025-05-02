@@ -7,7 +7,8 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 ##### Appel à faire #####
 
-# df = Base_de_donnees(liste_colonnes : optionnel)
+# from Protocole_donnees import *
+# df = Base_de_donnees(['sea_level','sea_temperature','greenland_mass','antarctica_mass','chlorophylle','CO2','sea_salinity'])
 
 ##### PIPELINE #####
 
