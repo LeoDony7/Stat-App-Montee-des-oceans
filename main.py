@@ -16,27 +16,53 @@ DF_final = Base_filtre(DF_desaison)'''
 
 '''tracer_df(DF_final)'''
 
-
 ##########################################################
 
+df = Base_de_donnees()
 
-##### Regression ######
+tracer_df(df)
 
-'''doublons = DF[DF.duplicated(subset='year_month', keep=False)]
-print(doublons)'''
+##### Regression simple ######
 
-DF = chargerBDD('Base_Statapp.csv')
+'''DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
 
 DF_desaison = Base_desaison(DF_propre)
 
 DF_final = Base_filtre(DF_desaison,['sea_level','chlorophylle'])
+Regression_simple(DF_final,'chlorophylle')'''
+
+##############################
 
 
-Regression_simple(DF_final,'chlorophylle')
+##### Régression multiple #####
 
-#######################
+'''DF = chargerBDD('Base_Statapp.csv')
+
+DF_propre = Base_nettoye(DF)
+
+DF_desaison = Base_desaison(DF_propre)
+
+DF_final = Base_filtre(DF_desaison)
+
+
+import matplotlib.pyplot as plt
+
+def save_model_summary_as_image(summary, filename="regression_summary.png"):
+    fig, ax = plt.subplots(figsize=(12, 8))
+    ax.axis('off')  # Pas d'axes visibles
+    ax.text(0, 1, str(summary), fontsize=10, family='monospace', verticalalignment='top')
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300, bbox_inches='tight')
+    plt.close()
+
+summary = Regression_multiple(DF_final)
+save_model_summary_as_image(summary)'''
+
+'''print(Regression_multiple(DF_final))
+'''
+###############################
 
 
 ##### Tests sur saisonnalité ######

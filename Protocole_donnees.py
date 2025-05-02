@@ -5,6 +5,10 @@ import os
 import pandas as pd
 from statsmodels.tsa.seasonal import seasonal_decompose
 
+##### Appel à faire #####
+
+# df = Base_de_donnees(liste_colonnes : optionnel)
+
 ##### PIPELINE #####
 
 # DF = chargerBDD('Base_Statapp.csv')
@@ -173,6 +177,28 @@ def Base_filtre(dataframe,liste_colonnes=[]):
 
     return dataframe[liste_colonnes].dropna()
 
+###############################
+
+##### Fonction complète ######
+
+def Base_de_donnees(liste_colonnes=[]):
+
+    '''
+    Reprend toutes les fonctions précédentes.
+    '''
+    DF = chargerBDD('Base_Statapp.csv')
+
+    DF_propre = Base_nettoye(DF)
+
+    DF_desaison = Base_desaison(DF_propre)
+
+    DF_final = Base_filtre(DF_desaison,liste_colonnes)
+
+    return DF_final
+##############################
+
+
+
 ##### Anciennes fonctions #####
 
 ### Filtrer sur la période commune
@@ -189,3 +215,5 @@ def Dataframe_filtre_periode(dataframe,periode):
     filtre = (dataframe['year_month'] >= debut) & (dataframe['year_month'] <= fin)
 
     return dataframe[filtre].sort_values('year_month')
+
+

@@ -9,6 +9,7 @@ from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
 import numpy as np
+import pandas as pd
 
 #### Partie n°1 : Préparation des données ####
 
@@ -37,8 +38,6 @@ def preparation_donnees(dataframe,colonnes):
 
 
 #### Partie n°2 : Régressions simples ####
-
-# A faire : gérer la taille des dataframe en fonction des variables pour avoir le plus de points possibles dans les regressions.
 
 def Regression_simple(dataframe,variable_explicative):
 
@@ -101,5 +100,37 @@ def Regression_simple(dataframe,variable_explicative):
     plt.tight_layout()
     plt.show()
 
+##########################################
 
+
+#### Partie n°3 : Régressions multiples ####
+
+def Regression_multiple(dataframe):
+
+    '''
+    Fonction qui renvoie un résumé de la régression multiple de sea_level sur le reste du Dataset.
+    '''
+
+    # Chargement des données 
+    var_cible = 'sea_level'
+    X = dataframe.drop(columns =['sea_level','year_month'])
+    y = dataframe[var_cible]
+
+    # Standardisation des données
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # Reconvertir en DataFrame pour conserver les noms de colonnes
+    X_df = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
+
+    # Ajouter constante pour l'intercept
+    X_df = sm.add_constant(X_df)
+
+    # Régression
+    model = sm.OLS(y, X_df).fit()
+
+    return model.summary()
+
+
+############################################
 
