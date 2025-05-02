@@ -9,11 +9,11 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 # DF = chargerBDD('Base_Statapp.csv')
 
-# DF_filtre = Dataframe_filtre_periode(DF,['2011-01-01','2022-12-31'])
-
-# DF_propre = Base_nettoye(DF_filtre)
+# DF_propre = Base_nettoye(DF)
 
 # DF_desaison = Base_desaison(DF_propre)
+
+# DF_filtre = Base_filtre(DF_desaison,liste_colonnes)
 
 
 ##### Explication des étapes #####
@@ -37,23 +37,7 @@ def chargerBDD(nom_fichier):
     return dataframe_no_duplicate
 
 
-### Deuxième étape : Filtrer sur la période commune
-
-def Dataframe_filtre_periode(dataframe,periode):
-
-    '''
-    Fonction qui renvoie un Dataframe restreint à la période sur laquelle on possède toutes les données.
-    periode est un couple de str au format ['YYYY-MM-DD','YYYY-MM-DD']
-    '''
-
-    # Selection de la période 
-    debut, fin = periode     
-    filtre = (dataframe['year_month'] >= debut) & (dataframe['year_month'] <= fin)
-
-    return dataframe[filtre].sort_values('year_month')
-
-
-### Troisième étape : renommer les colonnes
+### Deuxième étape : renommer les colonnes
 
 def formatage_date(dataframe):
 
@@ -83,7 +67,7 @@ def rename_colonnes(dataframe):
     dataframe.rename(columns=nouveaux_noms, inplace=True)
 
 
-### Quatrième étape : Gérer les données manquantes
+### Troisième étape : Gérer les données manquantes
 
 def interpolation(dataframe):
 
@@ -113,7 +97,7 @@ def Base_nettoye(dataframe):
     return dataframe
 
 
-### Cinquième étape : Désaisonnaliser les colonnes 
+### Quatrième étape : Désaisonnaliser les colonnes 
 
 def desaison_shift(dataframe):
 
@@ -164,4 +148,44 @@ def Base_desaison(dataframe):
     return dataframe.drop(columns=colonnes_a_supprimer)
 
 
+### Cinquième étape : Filtrer sur les colonnes en adaptant la période
 
+def Base_filtre(dataframe,liste_colonnes=[]):
+
+    '''
+    Fonction qui crée un dataframe avec seulement les colonnes passées en entrée, en se restreignant à la période commune.
+    '''
+
+    # On supprime les noms de colonnes pas valides
+    for colonne in liste_colonnes:
+        if colonne not in dataframe.columns:
+            liste_colonnes.remove(colonne)
+
+    # Si on ne précise pas les colonnes, renvoier le dataframe avec toutes les colonnes
+    if liste_colonnes==[]:
+        return dataframe.dropna()
+
+    # Sinon, on filtre
+    else:
+        if 'year_month' in liste_colonnes:
+            liste_colonnes.remove('year_month')
+        liste_colonnes.insert(0,'year_month')
+
+    return dataframe[liste_colonnes].dropna()
+
+##### Anciennes fonctions #####
+
+### Filtrer sur la période commune
+
+def Dataframe_filtre_periode(dataframe,periode):
+
+    '''
+    Fonction qui renvoie un Dataframe restreint à la période sur laquelle on possède toutes les données.
+    periode est un couple de str au format ['YYYY-MM-DD','YYYY-MM-DD']
+    '''
+
+    # Selection de la période 
+    debut, fin = periode     
+    filtre = (dataframe['year_month'] >= debut) & (dataframe['year_month'] <= fin)
+
+    return dataframe[filtre].sort_values('year_month')

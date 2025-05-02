@@ -81,7 +81,7 @@ def Regression_simple(dataframe,variable_explicative):
     plt.plot(X, intercept + coef*X, color='red', label=f'sea_level = {intercept:.4f} + {coef:.4f}*{variable_explicative}', linewidth=2)
     plt.xlabel(f'{variable_explicative} (standardisée)')
     plt.ylabel('sea_level')
-    plt.title(f'Régression linéaire de Sea_level sur {variable_explicative}')
+    plt.title(f'Régression linéaire de sea_level sur {variable_explicative}')
 
     # Ajouter texte avec les métriques
     textstr = '\n'.join((

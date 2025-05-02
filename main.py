@@ -5,19 +5,17 @@ from Regression import *
 
 ##### Test de la pipeline de préparation des données #####
 
-DF = chargerBDD('Base_Statapp.csv')
+'''DF = chargerBDD('Base_Statapp.csv')
 
-DF_filtre = Dataframe_filtre_periode(DF,['2011-01-01','2022-12-31'])
-
-DF_propre = Base_nettoye(DF_filtre)
+DF_propre = Base_nettoye(DF)
 
 DF_desaison = Base_desaison(DF_propre)
 
-# test. A mettre dans la pipeline si nécéssaire
-DF_final = Dataframe_filtre_periode(DF_desaison,['2012-01-01','2022-12-31'])
+DF_final = Base_filtre(DF_desaison)'''
+# ou bien : DF_final = Base_filtre(DF_desaison,['sea_level','sea_temperature']) par exemple
 
+'''tracer_df(DF_final)'''
 
-'''tracer_df(DF_desaison)'''
 
 ##########################################################
 
@@ -27,9 +25,17 @@ DF_final = Dataframe_filtre_periode(DF_desaison,['2012-01-01','2022-12-31'])
 '''doublons = DF[DF.duplicated(subset='year_month', keep=False)]
 print(doublons)'''
 
+DF = chargerBDD('Base_Statapp.csv')
 
-Regression_simple(DF_final,'sea_temperature')
+DF_propre = Base_nettoye(DF)
 
+DF_desaison = Base_desaison(DF_propre)
+
+DF_final = Base_filtre(DF_desaison,['sea_level','greenland_mass'])
+print(DF_final.head())
+
+'''Regression_simple(DF_final,'greenland_mass')
+'''
 #######################
 
 
