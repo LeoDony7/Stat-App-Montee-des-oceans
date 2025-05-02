@@ -31,11 +31,11 @@ DF_propre = Base_nettoye(DF)
 
 DF_desaison = Base_desaison(DF_propre)
 
-DF_final = Base_filtre(DF_desaison,['sea_level','greenland_mass'])
-print(DF_final.head())
+DF_final = Base_filtre(DF_desaison,['sea_level','chlorophylle'])
 
-'''Regression_simple(DF_final,'greenland_mass')
-'''
+
+Regression_simple(DF_final,'chlorophylle')
+
 #######################
 
 

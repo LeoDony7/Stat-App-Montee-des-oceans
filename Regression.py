@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
+import numpy as np
 
 #### Partie n°1 : Préparation des données ####
 
@@ -58,6 +59,9 @@ def Regression_simple(dataframe,variable_explicative):
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
+    X_all = np.concatenate([X_train, X_test])
+    y_all = np.concatenate([y_train, y_test])
+
     # Modèle
     model = LinearRegression()
     model.fit(X_train, y_train)
@@ -77,8 +81,8 @@ def Regression_simple(dataframe,variable_explicative):
 
     # Affichage
     plt.figure(figsize=(8, 6))
-    plt.scatter(X, y, color='blue', label='Données réelles')
-    plt.plot(X, intercept + coef*X, color='red', label=f'sea_level = {intercept:.4f} + {coef:.4f}*{variable_explicative}', linewidth=2)
+    plt.scatter(X_all, y_all, color='blue', label='Données réelles')
+    plt.plot(X_all, intercept + coef*X_all, color='red', label=f'sea_level = {intercept:.4f} + {coef:.4f}*{variable_explicative}', linewidth=2)
     plt.xlabel(f'{variable_explicative} (standardisée)')
     plt.ylabel('sea_level')
     plt.title(f'Régression linéaire de sea_level sur {variable_explicative}')
