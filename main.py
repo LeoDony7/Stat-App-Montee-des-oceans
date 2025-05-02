@@ -5,40 +5,31 @@ from Regression import *
 
 ##### Test de la pipeline de préparation des données #####
 
-'''DF = chargerBDD('Base_Statapp.csv')
-
-DF_propre = Base_nettoye(DF)
-
-DF_desaison = Base_desaison(DF_propre)
-
-DF_final = Base_filtre(DF_desaison)'''
-# ou bien : DF_final = Base_filtre(DF_desaison,['sea_level','sea_temperature']) par exemple
-
-'''tracer_df(DF_final)'''
-
-##########################################################
-
 df = Base_de_donnees()
 
-tracer_df(df)
+'''tracer_df(df)
+'''
+##########################################################
 
 ##### Regression simple ######
 
-'''DF = chargerBDD('Base_Statapp.csv')
+'''
+DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
 
 DF_desaison = Base_desaison(DF_propre)
 
 DF_final = Base_filtre(DF_desaison,['sea_level','chlorophylle'])
-Regression_simple(DF_final,'chlorophylle')'''
+Regression_simple(DF_final,'chlorophylle')
+'''
 
 ##############################
 
-
 ##### Régression multiple #####
 
-'''DF = chargerBDD('Base_Statapp.csv')
+'''
+DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
 
@@ -58,39 +49,102 @@ def save_model_summary_as_image(summary, filename="regression_summary.png"):
     plt.close()
 
 summary = Regression_multiple(DF_final)
-save_model_summary_as_image(summary)'''
-
-'''print(Regression_multiple(DF_final))
+save_model_summary_as_image(summary)
 '''
+
+
 ###############################
 
-
-##### Tests sur saisonnalité ######
-
-# Code pour visualiser le truc de saisonnalité et tendance pour toutes les var en même temps.
-'''variables = list(BDD.columns[1:])
-period = 12
-
-n_vars = len(variables)
-fig, axes = plt.subplots(n_vars, 3, figsize=(15, 4 * n_vars), sharex=True)
-
-for i, var in enumerate(variables):
-    decomposition = seasonal_decompose(BDD[var], model='additive', period=period)
-    BDD[f'{var}_deseasonalized'] = BDD[var] - decomposition.seasonal
-
-    # Affichage
-    axes[i, 0].plot(decomposition.trend)
-    axes[i, 0].set_title(f"{var} - Tendance")
-
-    axes[i, 1].plot(decomposition.seasonal)
-    axes[i, 1].set_title(f"{var} - Saison")
-
-    axes[i, 2].plot(decomposition.resid)
-    axes[i, 2].set_title(f"{var} - Résidus")
-
-plt.tight_layout()
-plt.suptitle("Décomposition saisonnière de chaque variable", fontsize=16, y=1.02)
-plt.show()
+# Regression polynomiale
 '''
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.impute import SimpleImputer
+import statsmodels.api as sm
 
-###################################
+def regression_polynomiale_deg2(dataframe, cible, exclure=[]):
+    """
+    Régression multiple avec interactions polynomiales de degré 2.
+
+    Paramètres :
+    - dataframe : DataFrame d'entrée
+    - cible : nom de la variable cible
+    - exclure : colonnes à exclure des prédicteurs (ex. colonne date)
+
+    Retour :
+    - Résumé du modèle OLS avec noms de variables explicites
+    """
+    # Séparer X et y
+    X = dataframe.drop(columns=[cible] + exclure)
+    y = dataframe[cible]
+
+    # Standardisation
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # Création des interactions polynomiales
+    poly = PolynomialFeatures(degree=2, include_bias=False)
+    X_poly_array = poly.fit_transform(X_scaled)
+    feature_names = poly.get_feature_names_out(input_features=X.columns)
+
+    # Alignement des index avec y
+    X_poly = pd.DataFrame(X_poly_array, columns=feature_names, index=y.index)
+
+    # Ajouter la constante pour l'intercept
+    X_poly = sm.add_constant(X_poly)
+
+    # Régression OLS
+    model = sm.OLS(y, X_poly).fit()
+
+    return model.summary()
+
+
+summary = regression_polynomiale_deg2(df, cible='sea_level', exclure=['year_month'])
+print(summary)'''
+
+
+## Regression polynomiale + Lasso
+
+'''
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.linear_model import LassoCV
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import r2_score
+import pandas as pd
+
+def regression_lasso_poly(dataframe, cible='sea_level', exclure=['year_month'], degree=2):
+    # Séparer X et y
+    X = dataframe.drop(columns=[cible] + exclure)
+    y = dataframe[cible]
+
+    # Création du pipeline : PolynomialFeatures + Standardisation + LassoCV
+    pipeline = make_pipeline(
+        PolynomialFeatures(degree=degree, include_bias=False),
+        StandardScaler(),
+        LassoCV(cv=5, random_state=42)
+    )
+    
+    # Entraînement du modèle
+    pipeline.fit(X, y)
+
+    # Prédiction + score
+    y_pred = pipeline.predict(X)
+    r2 = r2_score(y, y_pred)
+    print(f"R² du modèle Lasso (interactions degré {degree}) : {r2:.4f}")
+
+    # Récupérer les noms des variables
+    poly_features = pipeline.named_steps['polynomialfeatures'].get_feature_names_out(X.columns)
+    coefs = pipeline.named_steps['lassocv'].coef_
+    
+    # Filtrer les variables sélectionnées
+    selected = pd.Series(coefs, index=poly_features)
+    selected_nonzero = selected[selected != 0].sort_values(key=abs, ascending=False)
+    print("\nVariables sélectionnées (coefs non nuls) :")
+    print(selected_nonzero)
+
+    return selected_nonzero
+
+regression_lasso_poly(df)
+'''

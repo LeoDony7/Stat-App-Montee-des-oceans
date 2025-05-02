@@ -103,7 +103,7 @@ def Regression_simple(dataframe,variable_explicative):
 ##########################################
 
 
-#### Partie n°3 : Régressions multiples ####
+#### Partie n°3 : Régressions multiples #####
 
 def Regression_multiple(dataframe):
 
@@ -133,4 +133,6 @@ def Regression_multiple(dataframe):
 
 
 ############################################
+
+##### Partie n°4 : Régression polynomiale #####
 
