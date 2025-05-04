@@ -55,96 +55,142 @@ save_model_summary_as_image(summary)
 
 ###############################
 
-# Regression polynomiale
-'''
+### Test du VIF lorsqu'on crée ice_mass
+
+'''import pandas as pd
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# Exemple : on souhaite faire la moyenne de var1 et var2
+var1 = 'greenland_mass'
+var2 = 'antarctica_mass'
+
+# 1. Créer la colonne moyenne
+df['ice_mass'] = df[[var1, var2]].mean(axis=1)
+
+# 2. Créer le nouveau DataFrame en supprimant les deux colonnes initiales (et sea_level car variable cible)
+df_reduit = df.drop(columns=[var1, var2,'sea_level'])
+
+# 3. Calcul du VIF
+X = df_reduit.select_dtypes(include=[float, int]).dropna()  # On garde uniquement les colonnes numériques sans NaN
+X = X.reset_index(drop=True)  # S'assurer que l'index est aligné pour statsmodels
+
+# Création du DataFrame pour stocker les VIF
+vif_data = pd.DataFrame()
+vif_data["feature"] = X.columns
+vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+
+# Affichage des résultats
+print(vif_data.sort_values("VIF", ascending=False))'''
+
+
+### Test du VIF enlevant ice_mass
+
+'''import pandas as pd
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# Exemple : on souhaite faire la moyenne de var1 et var2
+var1 = 'greenland_mass'
+var2 = 'antarctica_mass'
+
+# 1. Créer le nouveau DataFrame en supprimant les deux colonnes initiales (et aussi sea_level car variable cible)
+df_reduit = df.drop(columns=[var1, var2,'sea_level'])
+
+# 3. Calcul du VIF
+X = df_reduit.select_dtypes(include=[float, int]).dropna()  # On garde uniquement les colonnes numériques sans NaN
+X = X.reset_index(drop=True)  # S'assurer que l'index est aligné pour statsmodels
+
+# Création du DataFrame pour stocker les VIF
+vif_data = pd.DataFrame()
+vif_data["feature"] = X.columns
+vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+
+# Affichage des résultats
+print(vif_data.sort_values("VIF", ascending=False))'''
+
+#### fonction pour avoir la regression polynomiale avec AIC
+
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
-from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 import statsmodels.api as sm
+from statsmodels.tools import add_constant
 
-def regression_polynomiale_deg2(dataframe, cible, exclure=[]):
+def modele_polynomial_selection(df, cible='sea_level', critere='AIC'):
     """
-    Régression multiple avec interactions polynomiales de degré 2.
-
+    Applique une régression polynomiale d'ordre 2 avec sélection de variables par AIC ou BIC.
+    
     Paramètres :
-    - dataframe : DataFrame d'entrée
-    - cible : nom de la variable cible
-    - exclure : colonnes à exclure des prédicteurs (ex. colonne date)
-
+    - df : DataFrame contenant les données (y compris la cible et les variables explicatives)
+    - cible : nom de la variable cible (par défaut 'sea_level')
+    - critere : 'AIC' ou 'BIC' pour la sélection du meilleur modèle
+    
     Retour :
-    - Résumé du modèle OLS avec noms de variables explicites
+    - best_model : modèle statsmodels ajusté
+    - selected_features : liste des variables sélectionnées
     """
-    # Séparer X et y
-    X = dataframe.drop(columns=[cible] + exclure)
-    y = dataframe[cible]
+    
+    # 1. Séparation de la cible et des variables explicatives
+    y = df[cible]
+    X = df.drop(columns=[cible,'greenland_mass','antarctica_mass'])
 
-    # Standardisation
+    # 2. Suppression de la colonne temporelle si elle existe
+    if 'year_month' in X.columns:
+        X = X.drop(columns=['year_month'])
+
+    # 3. Standardisation
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
+    X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns)
 
-    # Création des interactions polynomiales
-    poly = PolynomialFeatures(degree=2, include_bias=False)
-    X_poly_array = poly.fit_transform(X_scaled)
-    feature_names = poly.get_feature_names_out(input_features=X.columns)
+    # 4. Création des termes quadratiques et d'interaction
+    poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
+    X_poly = poly.fit_transform(X_scaled_df)
+    X_poly_df = pd.DataFrame(X_poly, columns=poly.get_feature_names_out(X.columns))
 
-    # Alignement des index avec y
-    X_poly = pd.DataFrame(X_poly_array, columns=feature_names, index=y.index)
+    # 5. Réinitialisation des index pour éviter les problèmes dans statsmodels
+    X_poly_df = X_poly_df.reset_index(drop=True)
+    y = y.reset_index(drop=True)
 
-    # Ajouter la constante pour l'intercept
-    X_poly = sm.add_constant(X_poly)
+    # 6. Sélection de variables par forward selection avec AIC/BIC
+    def forward_selection(X, y):
+        initial_features = []
+        remaining_features = list(X.columns)
+        selected_features = []
+        current_score, best_new_score = np.inf, np.inf
+        best_model = None
 
-    # Régression OLS
-    model = sm.OLS(y, X_poly).fit()
+        while remaining_features:
+            scores_with_candidates = []
+            for candidate in remaining_features:
+                features = selected_features + [candidate]
+                X_model = add_constant(X[features])
+                model = sm.OLS(y, X_model).fit()
+                score = model.aic if critere == 'AIC' else model.bic
+                scores_with_candidates.append((score, candidate, model))
 
-    return model.summary()
+            scores_with_candidates.sort()
+            best_new_score, best_candidate, best_candidate_model = scores_with_candidates[0]
+
+            if current_score == np.inf or best_new_score < current_score:
+                remaining_features.remove(best_candidate)
+                selected_features.append(best_candidate)
+                current_score = best_new_score
+                best_model = best_candidate_model
+            else:
+                break
+
+        return best_model, selected_features
+
+    # 7. Lancement de la sélection
+    best_model, selected_features = forward_selection(X_poly_df, y)
+
+    # 8. Résultats
+    print("Variables sélectionnées :", selected_features)
+    print("\nRésumé du modèle final :")
+    print(best_model.summary())
+
+    return best_model, selected_features
+
+best_model, selected = modele_polynomial_selection(df, cible='sea_level')
 
 
-summary = regression_polynomiale_deg2(df, cible='sea_level', exclure=['year_month'])
-print(summary)'''
-
-
-## Regression polynomiale + Lasso
-
-'''
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
-from sklearn.linear_model import LassoCV
-from sklearn.pipeline import make_pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import r2_score
-import pandas as pd
-
-def regression_lasso_poly(dataframe, cible='sea_level', exclure=['year_month'], degree=2):
-    # Séparer X et y
-    X = dataframe.drop(columns=[cible] + exclure)
-    y = dataframe[cible]
-
-    # Création du pipeline : PolynomialFeatures + Standardisation + LassoCV
-    pipeline = make_pipeline(
-        PolynomialFeatures(degree=degree, include_bias=False),
-        StandardScaler(),
-        LassoCV(cv=5, random_state=42)
-    )
-    
-    # Entraînement du modèle
-    pipeline.fit(X, y)
-
-    # Prédiction + score
-    y_pred = pipeline.predict(X)
-    r2 = r2_score(y, y_pred)
-    print(f"R² du modèle Lasso (interactions degré {degree}) : {r2:.4f}")
-
-    # Récupérer les noms des variables
-    poly_features = pipeline.named_steps['polynomialfeatures'].get_feature_names_out(X.columns)
-    coefs = pipeline.named_steps['lassocv'].coef_
-    
-    # Filtrer les variables sélectionnées
-    selected = pd.Series(coefs, index=poly_features)
-    selected_nonzero = selected[selected != 0].sort_values(key=abs, ascending=False)
-    print("\nVariables sélectionnées (coefs non nuls) :")
-    print(selected_nonzero)
-
-    return selected_nonzero
-
-regression_lasso_poly(df)
-'''
