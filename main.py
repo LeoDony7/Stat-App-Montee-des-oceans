@@ -131,7 +131,7 @@ def modele_polynomial_selection(df, cible='sea_level', critere='AIC'):
     
     # 1. Séparation de la cible et des variables explicatives
     y = df[cible]
-    X = df.drop(columns=[cible,'greenland_mass','antarctica_mass'])
+    X = df.drop(columns=[cible]) ##(tester en enlevant ou non les colonnes de glace : ,'greenland_mass','antarctica_mass')
 
     # 2. Suppression de la colonne temporelle si elle existe
     if 'year_month' in X.columns:
