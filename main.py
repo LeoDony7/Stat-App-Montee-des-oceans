@@ -264,7 +264,7 @@ df_johansen = df[vars_non_stationnaires].dropna()
 # Application du test de Johansen
 # det_order = 0: aucune constante
 # k_ar_diff = 1 : nombre de retards (lag) à ajuster selon la structure des données
-jres = coint_johansen(df_johansen, det_order=0, k_ar_diff=1)
+jres = coint_johansen(df_johansen, det_order=1, k_ar_diff=1)
 
 # Affichage des résultats
 print("Statistique de trace (trace statistic):")
@@ -308,7 +308,7 @@ print(jres.eig)
 
 ##### test de la cointégration sur les résidus de la régression
 
-from statsmodels.tsa.stattools import adfuller
+'''from statsmodels.tsa.stattools import adfuller
 import statsmodels.api as sm
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
@@ -347,4 +347,4 @@ else:
 
 # Résumé de la régression
 print("\nRésumé de la régression :")
-print(model.summary())
+print(model.summary())'''
