@@ -5,10 +5,21 @@ from Regression import *
 
 ##### Test de la pipeline de préparation des données #####
 
-df = Base_de_donnees()
+'''df = Base_de_donnees()'''
 
-'''tracer_df(df)
-'''
+'''tracer_df(df)'''
+
+'''# Filtrer le dataframe entre les dates spécifiées
+start_date = '2015-01-01'
+end_date = '2015-12-31'
+
+filtered_df = df[(df['year_month'] >= start_date) & (df['year_month'] <= end_date)]
+
+# Convertir en LaTeX
+latex_table = filtered_df.to_latex(index=False)  # index=False pour ne pas inclure l'index dans le tableau
+
+print(latex_table)'''
+
 ##########################################################
 
 ##### Regression simple ######
@@ -18,6 +29,9 @@ DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
 
+tracer_df(DF_propre)
+'''
+'''
 DF_desaison = Base_desaison(DF_propre)
 
 DF_final = Base_filtre(DF_desaison,['sea_level','chlorophylle'])
@@ -109,7 +123,7 @@ print(vif_data.sort_values("VIF", ascending=False))'''
 
 #### fonction pour avoir la regression polynomiale avec AIC
 
-import pandas as pd
+'''import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 import statsmodels.api as sm
@@ -192,5 +206,101 @@ def modele_polynomial_selection(df, cible='sea_level', critere='AIC'):
     return best_model, selected_features
 
 best_model, selected = modele_polynomial_selection(df, cible='sea_level')
+'''
 
+ 
 
+df = pd.read_csv('Base_clean.csv')
+
+########### test de stationnarité
+'''from statsmodels.tsa.stattools import adfuller, kpss
+import pandas as pd
+
+# Liste des colonnes à tester
+variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass', 'chlorophylle', 'CO2', 'sea_salinity']
+
+# Fonction pour appliquer les tests
+def test_stationarity(df, variables, alpha=0.05):
+    results = []
+
+    for var in variables:
+        serie = df[var].dropna()
+
+        # ADF Test
+        adf_stat, adf_p, _, _, _, _ = adfuller(serie)
+        adf_result = "Stationnaire" if adf_p < alpha else "Non stationnaire"
+
+        # KPSS Test
+        try:
+            kpss_stat, kpss_p, _, _ = kpss(serie, regression='c', nlags="auto")
+            kpss_result = "Non stationnaire" if kpss_p < alpha else "Stationnaire"
+        except:
+            kpss_stat, kpss_p, kpss_result = None, None, "Erreur"
+
+        results.append({
+            'Variable': var,
+            'ADF p-value': round(adf_p, 4),
+            'ADF conclusion': adf_result,
+            'KPSS p-value': round(kpss_p, 4) if kpss_p is not None else 'Erreur',
+            'KPSS conclusion': kpss_result
+        })
+
+    return pd.DataFrame(results)
+
+# Appel de la fonction
+stationarity_results = test_stationarity(df, variables)
+print(stationarity_results)'''
+
+############# test de cointégration avec det_order 0
+
+from statsmodels.tsa.vector_ar.vecm import coint_johansen
+
+# Sélection des séries non stationnaires
+vars_non_stationnaires = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
+
+# On extrait ces colonnes du DataFrame et on enlève les lignes avec des NaN
+df_johansen = df[vars_non_stationnaires].dropna()
+
+# Application du test de Johansen
+# det_order = 0: aucune constante
+# k_ar_diff = 1 : nombre de retards (lag) à ajuster selon la structure des données
+jres = coint_johansen(df_johansen, det_order=0, k_ar_diff=1)
+
+# Affichage des résultats
+print("Statistique de trace (trace statistic):")
+print(jres.lr1)
+print("\nValeurs critiques (critical values):")
+print(jres.cvt)
+
+# Interprétation rapide
+for i, stat in enumerate(jres.lr1):
+    print(f"\nHypothèse H0 : nombre de relations de co-intégration ≤ {i}")
+    print(f"Statistique de trace : {stat:.2f}")
+    print(f"Valeurs critiques 90% / 95% / 99% : {jres.cvt[i]}")
+    if stat > jres.cvt[i, 1]:  # 95% level
+        print("→ Rejet de H0 au seuil de 5% : il existe au moins", i+1, "relation(s) de co-intégration.")
+    else:
+        print("→ H0 non rejetée au seuil de 5%.")
+
+####### test de cointégration avec det_order 4
+'''from statsmodels.tsa.vector_ar.vecm import coint_johansen
+import pandas as pd
+
+# Sélection des séries non stationnaires
+vars_non_stationnaires = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
+
+# Extraction des données sans valeurs manquantes
+df_johansen = df[vars_non_stationnaires].dropna()
+
+# Application du test de Johansen avec tendance linéaire (det_order = 4)
+# k_ar_diff = 1 : nombre de retards (tu peux l'optimiser selon AIC/BIC si nécessaire)
+jres = coint_johansen(df_johansen, det_order=4, k_ar_diff=1)
+
+# Résultats
+print("→ Statistiques de trace (Johansen test):")
+for i, stat in enumerate(jres.lr1):
+    print(f"  - H0 : nombre de relations de co-intégration ≤ {i} → Statistique de trace = {stat:.2f}")
+
+print("\n→ Valeurs propres associées :")
+print(jres.eig)
+'''

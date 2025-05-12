@@ -3,6 +3,7 @@
 
 # Imports
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 
 ### Tracé d'une seule variable
@@ -19,7 +20,8 @@ def tracer_variable(dataframe, colonne):
     plt.xlabel('Date', fontsize=12)
     plt.ylabel(colonne, fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.6)
-    plt.xticks(rotation=45)
+    xticks = dataframe['year_month'][::12]
+    plt.xticks(xticks,rotation=45)
     plt.tight_layout()
     plt.legend()
     plt.show()
