@@ -304,3 +304,47 @@ for i, stat in enumerate(jres.lr1):
 print("\n→ Valeurs propres associées :")
 print(jres.eig)
 '''
+
+
+##### test de la cointégration sur les résidus de la régression
+
+from statsmodels.tsa.stattools import adfuller
+import statsmodels.api as sm
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+
+# Chargement des données 
+var_cible = 'sea_level'
+X = df.drop(columns=['sea_level','year_month'])
+y = df[var_cible]
+
+# Standardisation des données
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Reconvertir en DataFrame pour conserver les noms de colonnes
+X_df = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
+
+# Ajouter constante pour l'intercept
+X_df = sm.add_constant(X_df)
+
+# Régression
+model = sm.OLS(y, X_df).fit()
+
+# Résidus de la régression
+residuals = model.resid
+
+# Test de stationnarité des résidus avec ADF
+adf_test = adfuller(residuals)
+print(f"\nTest ADF pour les résidus :")
+print(f"Statistique ADF : {adf_test[0]}")
+print(f"p-value : {adf_test[1]}")
+
+if adf_test[1] < 0.05:
+    print("Les résidus sont stationnaires (p-value < 0.05).")
+else:
+    print("Les résidus ne sont pas stationnaires (p-value > 0.05).")
+
+# Résumé de la régression
+print("\nRésumé de la régression :")
+print(model.summary())
