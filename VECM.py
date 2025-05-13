@@ -76,11 +76,14 @@ plt.show()'''
 
 df_diff =df[['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']].diff().dropna()
 
+# Choix des paramètres lag et coint rank.
+
 order_res = select_order(df_diff, maxlags=12, deterministic="ci")
 print(order_res.summary())
 
 res = select_coint_rank(df_diff, det_order=1, k_ar_diff=3, method="trace", signif=0.05)
 print("Nombre de relations de co-intégration :", res.rank)
+
 # on trouve 4 relations de cointégrations avec un lag de 3 -> on va garder ca je pense
 # idem avec 5 lags
 
@@ -100,17 +103,17 @@ print(vecm_fit.summary())
 
 ## Forecasting : premiers pas
 
-# Exemple de prévision sur 10 périodes
+'''# Exemple de prévision sur 10 périodes
 forecast_steps = 10
 forecast = vecm_fit.predict(steps=forecast_steps)
 
 # Affichage des prévisions
 print(forecast)
-
+'''
 
 ## Prédictions, premiers graphiques
 
-import numpy as np
+'''import numpy as np
 
 
 # Exemple de prévisions à partir du modèle VECM
@@ -150,13 +153,13 @@ plt.ylabel('Valeur de la variable')
 plt.legend()
 
 # Affichage du graphique
-plt.show()
+plt.show()'''
 
 
 
 ## Prévisions intégrées en niveau
 
-# Exemple de prévisions à partir du modèle VECM
+'''# Exemple de prévisions à partir du modèle VECM
 forecast_steps = 10
 forecast = vecm_fit.predict(steps=forecast_steps)
 
@@ -205,4 +208,7 @@ plt.ylabel('Valeur de la variable (niveau de la mer)')
 plt.legend()
 
 # Affichage du graphique
-plt.show()
+plt.show()'''
+
+
+##
