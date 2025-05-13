@@ -18,57 +18,6 @@ df = pd.read_csv('Base_clean.csv')
 df['year_month'] = pd.to_datetime(df['year_month'])
 df.set_index('year_month',inplace=True)
 
-# étape 2
-
-# Liste des variables à tester
-variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
-
-# Fonction pour tester la stationnarité sur les différences premières
-def test_stationarity_diff(df, variables, alpha=0.05):
-    results = []
-    
-    for var in variables:
-        diff_series = df[var].diff().dropna()
-
-        # ADF
-        adf_stat, adf_p, _, _, _, _ = adfuller(diff_series)
-        adf_result = "Stationnaire" if adf_p < alpha else "Non stationnaire"
-
-        # KPSS
-        try:
-            kpss_stat, kpss_p, _, _ = kpss(diff_series, regression='c', nlags="auto")
-            kpss_result = "Non stationnaire" if kpss_p < alpha else "Stationnaire"
-        except:
-            kpss_p, kpss_result = None, "Erreur"
-
-        results.append({
-            'Variable': var,
-            'ADF p-value': round(adf_p, 4),
-            'ADF conclusion': adf_result,
-            'KPSS p-value': round(kpss_p, 4) if kpss_p is not None else 'Erreur',
-            'KPSS conclusion': kpss_result
-        })
-
-    return pd.DataFrame(results)
-
-# Appliquer la fonction
-results_diff = test_stationarity_diff(df, variables)
-print(results_diff)
-
-# Visualisation des variables différenciées
-'''var = 'antarctica_mass'
-plt.figure(figsize=(10, 5))
-plt.plot(df.index, df[var].diff() , label=var+'_diff', linewidth=1.5)
-plt.title(var+'_diff', fontsize=14)
-plt.xlabel('Date', fontsize=12)
-plt.ylabel(var+'_diff', fontsize=12)
-plt.grid(True, linestyle='--', alpha=0.6)
-xticks = df.index[::12]
-plt.xticks(xticks,rotation=45)
-plt.tight_layout()
-plt.legend()
-plt.show()'''
-
 
 ## Trouver les bons paramètres pour estimer le VECM
 

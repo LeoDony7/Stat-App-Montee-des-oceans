@@ -5,7 +5,10 @@ from statsmodels.tsa.vector_ar.vecm import coint_johansen
 import pandas as pd
 import statsmodels.api as sm
 from sklearn.preprocessing import StandardScaler
-
+from statsmodels.tsa.vector_ar.vecm import VECM, select_coint_rank, select_order
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+import numpy as np
 
 ## Etape 1 : tester la stationnarité des séries
 
@@ -162,4 +165,124 @@ def test_residus_engle_granger(df, alpha=0.05):
 
 
 ## Etape 4 : déterminer les paramètres du modèle VECM
+
+def selection_lag_order(df):
+
+    '''
+    Selection du nombre de lag optimal pour le modèle VECM via les critères AIC, BIC, FPE et HQIC
+    '''
+    
+    # Préparation des données
+    variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
+    df_selection = df[variables].dropna()
+
+    # Choix du nombre de lag
+    order_res = select_order(df_selection, maxlags=12, deterministic="ci")
+    return order_res.summary()
+
+
+def selection_rank_coint(df,lag_opti):
+
+    '''
+    Selection du nombre de relations de cointégration, étant donné le lag optimal.
+    On choisit det_order = 1 pour les mêmes raisons que précédemment.
+    '''
+
+    # Préparation des données
+    variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
+    df_selection = df[variables].dropna()
+
+    res = select_coint_rank(df_selection, det_order=1, k_ar_diff=lag_opti, method="trace", signif=0.05)
+    return res.rank
+
+
+## Etape 5 : Entrainement du modèle VECM
+
+def VECM_entraine(df):
+
+    '''
+    Entraine un modèle VECM sur les données mises en entrée.
+    Paramètres retenus pour le modèle :
+     - nombre de lag :3
+     - rang de cointégration : 3
+
+    On fixe deterministic = 'lo' , ce qui signifie qu'on suppose des constantes et des tendances linéaires potentiellement différentes pour chaque série.
+    '''
+
+    # Préparation des données
+    variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
+    df_entrainement = df[variables].dropna()
+
+    # Entrainement
+    vecm_model = VECM(df_entrainement,k_ar_diff=3,coint_rank=3,deterministic='lo')
+    vecm_fit = vecm_model.fit()
+
+    return vecm_fit
+
+
+## Etape 6 : Prévisions out of sample 
+
+
+def plot_vecm_predictions(df, vecm_fit, steps=12):
+
+    '''
+    Affiche les valeurs observées de 'sea_level' suivies des prédictions du VECM sur les 12 mois suivants.
+    
+    - Données observées en bleu
+    - Prédictions en rouge
+    - Intervalle de confiance à 95% (cumulatif)
+    '''
+
+    # 1. Préparation des données
+    df = df.copy()
+    df['year_month'] = pd.to_datetime(df['year_month'])
+    df.set_index('year_month', inplace=True)
+
+    df_diff = df[vecm_fit.names].diff().dropna()
+    last_date = df_diff.index[-1]
+
+    # 2. Prédictions différenciées
+    forecast_diff = vecm_fit.predict(steps=steps)
+    forecast_df = pd.DataFrame(forecast_diff, columns=vecm_fit.names)
+    forecast_index = pd.date_range(start=last_date + pd.offsets.MonthBegin(1), periods=steps, freq='MS')
+    forecast_df.index = forecast_index
+
+    # 3. Conversion en niveau
+    last_real_value = df['sea_level'].iloc[-1]
+    forecast_level = forecast_df['sea_level'].cumsum() + last_real_value
+
+    # 4. Intervalle de confiance à 95% (cumulatif)
+    residuals = pd.DataFrame(vecm_fit.resid, columns=vecm_fit.names)
+    std_error = residuals['sea_level'].std()
+    z = norm.ppf(0.975)
+    
+    cumulative_std = np.sqrt(np.cumsum(np.full(steps, std_error**2)))
+    ic_upper = forecast_level + z * cumulative_std
+    ic_lower = forecast_level - z * cumulative_std
+
+    # 5. Tracé du graphique
+    plt.figure(figsize=(12, 6))
+    
+    # Observations réelles
+    plt.plot(df.index, df['sea_level'], color='blue', label='Historique')
+    
+    # Prédictions
+    plt.plot(forecast_df.index, forecast_level, color='red', label='Prévisions')
+    
+    # Trait entre dernière observation et première prédiction
+    plt.plot([df.index[-1], forecast_df.index[0]],
+             [df['sea_level'].iloc[-1], forecast_level.iloc[0]],
+             color='red', linestyle='-')
+
+    # Intervalle de confiance
+    plt.fill_between(forecast_df.index, ic_lower, ic_upper, color='red', alpha=0.3, label='IC 95%')
+
+    # Mise en forme
+    plt.title("Prévisions de 'sea_level' avec VECM (niveau + IC 95%)")
+    plt.xlabel("Date")
+    plt.ylabel("Niveau de la mer")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
