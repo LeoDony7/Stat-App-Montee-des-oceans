@@ -33,10 +33,18 @@ nombre_lag = selection_lag_order(df_base)
 ## Choix du rang de cointégration optimal
 rank_opti_4 = selection_rank_coint(df_base,4)
 rank_opti_6 = selection_rank_coint(df_base,6)
-print(f"Le rang de cointégration pour un lag de 4 est : {rank_opti_4}")
-print(f"Le rang de cointégration pour un lag de 6 est : {rank_opti_6}")
 rank_opti_3 = selection_rank_coint(df_base,3)
-print(f"Le rang de cointégration pour un lag de 3 (compromis) est : {rank_opti_3}")
+'''print(f"Le rang de cointégration pour un lag de 4 est : {rank_opti_4}")'''
+'''print(f"Le rang de cointégration pour un lag de 6 est : {rank_opti_6}")'''
+'''print(f"Le rang de cointégration pour un lag de 3 (compromis) est : {rank_opti_3}")'''
 # -> effectué, résultat sauvegardé sous le nom de 'rang_coint_optimal' dans les images
 
+## Entrainement du modèle
+modele_entraine =VECM_entraine(df_base)
+'''print(modele_entraine.summary())'''
+# /!\ Récuperer le summary pour faire des commentaires
 
+
+## Prévisions out of sample (en niveau)
+
+'''plot_vecm_predictions(df_base,modele_entraine)'''
