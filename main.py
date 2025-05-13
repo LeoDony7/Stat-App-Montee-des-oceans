@@ -208,79 +208,8 @@ def modele_polynomial_selection(df, cible='sea_level', critere='AIC'):
 best_model, selected = modele_polynomial_selection(df, cible='sea_level')
 '''
 
- 
 
 df = pd.read_csv('Base_clean.csv')
-
-########### test de stationnarité
-'''from statsmodels.tsa.stattools import adfuller, kpss
-import pandas as pd
-
-# Liste des colonnes à tester
-variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass', 'chlorophylle', 'CO2', 'sea_salinity']
-
-# Fonction pour appliquer les tests
-def test_stationarity(df, variables, alpha=0.05):
-    results = []
-
-    for var in variables:
-        serie = df[var].dropna()
-
-        # ADF Test
-        adf_stat, adf_p, _, _, _, _ = adfuller(serie)
-        adf_result = "Stationnaire" if adf_p < alpha else "Non stationnaire"
-
-        # KPSS Test
-        try:
-            kpss_stat, kpss_p, _, _ = kpss(serie, regression='c', nlags="auto")
-            kpss_result = "Non stationnaire" if kpss_p < alpha else "Stationnaire"
-        except:
-            kpss_stat, kpss_p, kpss_result = None, None, "Erreur"
-
-        results.append({
-            'Variable': var,
-            'ADF p-value': round(adf_p, 4),
-            'ADF conclusion': adf_result,
-            'KPSS p-value': round(kpss_p, 4) if kpss_p is not None else 'Erreur',
-            'KPSS conclusion': kpss_result
-        })
-
-    return pd.DataFrame(results)
-
-# Appel de la fonction
-stationarity_results = test_stationarity(df, variables)
-print(stationarity_results)'''
-
-############# test de cointégration avec det_order 0
-
-from statsmodels.tsa.vector_ar.vecm import coint_johansen
-
-# Sélection des séries non stationnaires
-vars_non_stationnaires = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
-
-# On extrait ces colonnes du DataFrame et on enlève les lignes avec des NaN
-df_johansen = df[vars_non_stationnaires].dropna()
-
-# Application du test de Johansen
-# det_order = 0: aucune constante
-# k_ar_diff = 1 : nombre de retards (lag) à ajuster selon la structure des données
-jres = coint_johansen(df_johansen, det_order=1, k_ar_diff=1)
-
-# Affichage des résultats
-print("Statistique de trace (trace statistic):")
-print(jres.lr1)
-print("\nValeurs critiques (critical values):")
-print(jres.cvt)
-
-# Interprétation rapide
-for i, stat in enumerate(jres.lr1):
-    print(f"\nHypothèse H0 : nombre de relations de co-intégration ≤ {i}")
-    print(f"Statistique de trace : {stat:.2f}")
-    print(f"Valeurs critiques 90% / 95% / 99% : {jres.cvt[i]}")
-    if stat > jres.cvt[i, 1]:  # 95% level
-        print("→ Rejet de H0 au seuil de 5% : il existe au moins", i+1, "relation(s) de co-intégration.")
-    else:
-        print("→ H0 non rejetée au seuil de 5%.")
 
 ####### test de cointégration avec det_order 4
 '''from statsmodels.tsa.vector_ar.vecm import coint_johansen
@@ -306,45 +235,3 @@ print(jres.eig)
 '''
 
 
-##### test de la cointégration sur les résidus de la régression
-
-'''from statsmodels.tsa.stattools import adfuller
-import statsmodels.api as sm
-from sklearn.preprocessing import StandardScaler
-import pandas as pd
-
-# Chargement des données 
-var_cible = 'sea_level'
-X = df.drop(columns=['sea_level','year_month'])
-y = df[var_cible]
-
-# Standardisation des données
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# Reconvertir en DataFrame pour conserver les noms de colonnes
-X_df = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
-
-# Ajouter constante pour l'intercept
-X_df = sm.add_constant(X_df)
-
-# Régression
-model = sm.OLS(y, X_df).fit()
-
-# Résidus de la régression
-residuals = model.resid
-
-# Test de stationnarité des résidus avec ADF
-adf_test = adfuller(residuals)
-print(f"\nTest ADF pour les résidus :")
-print(f"Statistique ADF : {adf_test[0]}")
-print(f"p-value : {adf_test[1]}")
-
-if adf_test[1] < 0.05:
-    print("Les résidus sont stationnaires (p-value < 0.05).")
-else:
-    print("Les résidus ne sont pas stationnaires (p-value > 0.05).")
-
-# Résumé de la régression
-print("\nRésumé de la régression :")
-print(model.summary())'''
