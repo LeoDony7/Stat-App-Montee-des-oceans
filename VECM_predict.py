@@ -198,17 +198,6 @@ plt.tight_layout()
 plt.show()
 
 
-### Tests et évaluation du modèle
 
-## Stationnarité des résidus
-# Résidus du modèle VECM
-residuals = vecm_fit.resid
-
-# Tester la stationnarité des résidus (avec le test de Dickey-Fuller par exemple)
-from statsmodels.tsa.stattools import adfuller
-
-for column in residuals.columns:
-    result = adfuller(residuals[column])
-    print(f'{column} - p-value: {result[1]}')
 
 

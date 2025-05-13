@@ -5,17 +5,16 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller, kpss
 from statsmodels.tsa.vector_ar.vecm import VECM, select_coint_rank, select_order
 
+from VECM_predict import *
+
 
 # données
 
 df = pd.read_csv('Base_clean.csv')
 
-# étape 1
+df_diff = df_diff()
 
-df['year_month'] = pd.to_datetime(df['year_month'])
-df.set_index('year_month',inplace=True)
-
-df_diff =df[['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']].diff().dropna()
+vecm_fit = modele_VECM(df_diff)
 
 
 ### Comparaison des prévisions in sample
@@ -83,3 +82,16 @@ plt.legend()
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+
+### Tests et évaluation du modèle
+
+## Stationnarité des résidus
+# Résidus du modèle VECM
+residuals = vecm_fit.resid
+
+# Tester la stationnarité des résidus (avec le test de Dickey-Fuller par exemple)
+from statsmodels.tsa.stattools import adfuller
+
+for column in residuals.columns:
+    result = adfuller(residuals[column])
+    print(f'{column} - p-value: {result[1]}')
