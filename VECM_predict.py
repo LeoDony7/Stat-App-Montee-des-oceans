@@ -5,8 +5,39 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller, kpss
 from statsmodels.tsa.vector_ar.vecm import VECM, select_coint_rank, select_order
 
+# Le tableau différencié commence au 2011-02 et finit au 2022-12
+# Le tableau classique commence au 2011-01 et finit au 2022-12
 
-# données
+def df_diff():
+
+    '''
+    Renvoie le dataframe avec seulement les variables differenciées.
+    '''
+
+    df = pd.read_csv('Base_clean.csv')
+
+    df['year_month'] = pd.to_datetime(df['year_month'])
+    df.set_index('year_month',inplace=True)
+
+    df_diff =df[['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']].diff().dropna()
+
+    return df_diff
+
+def modele_VECM(df_diff):
+
+    '''
+    Entraine et renvoie un modèle VECM sur les données passées en entrée selon les paramètre trouvés pus haut
+    '''
+
+    # Estimer le modèle VECM avec les lags et les relations de cointégration déterminés
+    vecm_model = VECM(df_diff, k_ar_diff=3, coint_rank=4, deterministic="ci")
+
+    # Ajuster le modèle
+    vecm_fit = vecm_model.fit()
+
+    return vecm_fit
+
+'''# données
 
 df = pd.read_csv('Base_clean.csv')
 
@@ -21,12 +52,13 @@ df_diff =df[['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass'
 vecm_model = VECM(df_diff, k_ar_diff=3, coint_rank=4, deterministic="ci")
 
 # Ajuster le modèle
-vecm_fit = vecm_model.fit()
+vecm_fit = vecm_model.fit()'''
+
+df_diff=df_diff()
+
+vecm_fit = modele_VECM(df_diff)
 
 
-
-# Le tableau différencié commence au 2011-02 et finit au 2022-12
-# Le tableau classique commence au 2011-01 et finit au 2022-12
 
 ####### Prévisions sur la série différenciée
 
@@ -166,3 +198,18 @@ plt.legend()
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+
+
+### Tests et évaluation du modèle
+
+## Stationnarité des résidus
+# Résidus du modèle VECM
+residuals = vecm_fit.resid
+
+# Tester la stationnarité des résidus (avec le test de Dickey-Fuller par exemple)
+from statsmodels.tsa.stattools import adfuller
+
+for column in residuals.columns:
+    result = adfuller(residuals[column])
+    print(f'{column} - p-value: {result[1]}')
+
