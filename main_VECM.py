@@ -46,5 +46,11 @@ modele_entraine =VECM_entraine(df_base)
 
 
 ## Prévisions out of sample (en niveau)
-
 '''plot_vecm_predictions(df_base,modele_entraine)'''
+# -> effectué, résultat sauvegardé sous le nom 'VECM_bien_specifie_prevision' sur le bureau
+
+## Prévisions in sample + Evaluation
+df_base['year_month'] = pd.to_datetime(df_base['year_month'])
+modele_entraine_IS = VECM_entraine(df_base[df_base['year_month'] < pd.Timestamp("2020-01-01")])
+pred, actual, rmse, mae = evaluate_vecm_with_model(df_base, modele_entraine_IS, variables=['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass'])
+

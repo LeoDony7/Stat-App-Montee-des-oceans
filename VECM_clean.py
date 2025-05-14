@@ -9,6 +9,7 @@ from statsmodels.tsa.vector_ar.vecm import VECM, select_coint_rank, select_order
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 ## Etape 1 : tester la stationnarité des séries
 
@@ -285,4 +286,80 @@ def plot_vecm_predictions(df, vecm_fit, steps=12):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+
+## Etape 7 : Prévisions in sample + Evaluation
+
+def evaluate_vecm_with_model(df, vecm_fit, variables, forecast_steps=12):
+
+    '''
+    Évalue un modèle VECM déjà fitté via prévision hors échantillon :
+    - Prédit forecast_steps mois après 2019-12-01
+    - Compare aux vraies valeurs
+    - Affiche RMSE, MAE + graphique avec IC 95%
+
+    Paramètres :
+    df : DataFrame contenant 'year_month' + colonnes utilisées dans le modèle
+    vecm_fit : modèle VECM déjà ajusté
+    variables : liste des noms de colonnes utilisées dans le modèle
+    forecast_steps : nombre de périodes à prédire (par défaut 12)
+    '''
+
+    df = df.copy()
+    df['year_month'] = pd.to_datetime(df['year_month'])
+    df.set_index('year_month', inplace=True)
+
+    # Définir les bornes temporelles
+    test_start = pd.Timestamp("2020-01-01")
+    df_train = df[df.index < test_start]
+    df_test = df[df.index >= test_start][:forecast_steps]
+
+    # Dernières valeurs avant prévision
+    df_train_model = df_train[variables]
+    last_values = df_train_model.iloc[-1]
+
+    # Prédictions différenciées
+    forecast_diff = vecm_fit.predict(steps=forecast_steps)
+    forecast_df = pd.DataFrame(forecast_diff, columns=variables)
+    forecast_df.index = pd.date_range(start=last_values.name + pd.offsets.MonthBegin(1),
+                                      periods=forecast_steps, freq='MS')
+
+    # Reconstitution en niveau
+    forecast_level = forecast_df.cumsum() + last_values
+
+    # Vraies valeurs à comparer
+    actual = df_test['sea_level']
+    predicted = forecast_level['sea_level']
+
+    # IC 95% : cumul des erreurs
+    residuals = pd.DataFrame(vecm_fit.resid, columns=variables)
+    std_error = residuals['sea_level'].std()
+    z = norm.ppf(0.975)
+    cumulative_std = np.sqrt(np.cumsum(np.full(forecast_steps, std_error**2)))
+    ic_upper = predicted + z * cumulative_std
+    ic_lower = predicted - z * cumulative_std
+
+    # Calcul des scores
+    rmse = np.sqrt(mean_squared_error(actual, predicted))
+    mae = mean_absolute_error(actual, predicted)
+
+    # Affichage
+    print(f"\nÉvaluation des prévisions VECM (sur {forecast_steps} mois):")
+    print(f"RMSE : {rmse:.3f}")
+    print(f"MAE  : {mae:.3f}")
+
+    # Graphique
+    plt.figure(figsize=(12, 6))
+    plt.plot(df.index, df['sea_level'], color='blue', label='Historique')
+    plt.plot(predicted.index, predicted, color='red', label='Prévisions')
+    plt.fill_between(predicted.index, ic_lower, ic_upper, color='red', alpha=0.3, label='IC 95%')
+    plt.title("Prévision in sample de 'sea_level' (VECM)")
+    plt.xlabel("Date")
+    plt.ylabel("Niveau de la mer")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    return predicted, actual, rmse, mae
 
