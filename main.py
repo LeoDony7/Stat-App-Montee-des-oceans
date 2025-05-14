@@ -20,6 +20,15 @@ latex_table = filtered_df.to_latex(index=False)  # index=False pour ne pas inclu
 
 print(latex_table)'''
 
+
+
+DF = chargerBDD('Base_Statapp.csv')
+
+DF_propre = Base_nettoye(DF)
+
+DF_desaison = Base_desaison(DF_propre)
+
+tracer_variable(DF_desaison,'sea_level')
 ##########################################################
 
 ##### Regression simple ######
@@ -209,7 +218,7 @@ best_model, selected = modele_polynomial_selection(df, cible='sea_level')
 '''
 
 
-df = pd.read_csv('Base_clean.csv')
+'''df = pd.read_csv('Base_clean.csv')'''
 
 ####### test de cointégration avec det_order 4
 '''from statsmodels.tsa.vector_ar.vecm import coint_johansen
