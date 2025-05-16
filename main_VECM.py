@@ -65,6 +65,22 @@ modele_entraine =VECM_entraine(df_base)
 '''df_base['year_month'] = pd.to_datetime(df_base['year_month'])
 modele_entraine_IS = VECM_entraine(df_base[df_base['year_month'] < pd.Timestamp("2020-01-01")])
 pred, actual, rmse, mae = evaluate_vecm_with_model(df_base, modele_entraine_IS, variables=['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass'])
-
 '''
-evaluation_Ljung_Box(df_base,modele_entraine)
+
+## Test de non corrélation des résidus
+result = evaluation_Ljung_Box(df_base,modele_entraine)
+print(result)
+# -> effectué, résultat sauvegardé dans le fichier txt
+
+## Test de normalité des résidus
+jb_result = normalite_jarque_bera(modele_entraine)
+print('Résultat du test de Jarque-Bera :')
+print(jb_result)
+# -> effectué, résultat sauvegardé dans le fichier txt
+
+## Test de stabilité
+'''matrice_vp = test_stabilité(modele_entraine)
+print('Valeurs propres de la matrice de transition')
+print(np.round(matrice_vp,3))'''
+
+

@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from statsmodels.stats.diagnostic import acorr_ljungbox
-from statsmodels.graphics.tsaplots import plot_acf
+from scipy.stats import jarque_bera
+from statsmodels.tsa.vector_ar.var_model import VARProcess
 
 ## Etape 1 : tester la stationnarité des séries
 
@@ -97,9 +98,8 @@ def test_johansen(df):
 
     '''
     Test du nombre de relation de cointégration via le test de Johansen.
-    On fixe det_order = 1 (Constante dans l'équation de co-intégration uniquement) et k_ar_diff = 1 pour avoir des résultats explicites au test.
-    L'idéal serait de prendre det_order = 4 (présence d'une tendance pour chaque variable) qui correspond plus à nos données, mais dans ce cas on ne connait pas les valeurs de seuil pour la statistique de test.
-    Il faudrait également déterminer le k_ar_diff optimal mais nous ne l'avons pas fait.
+    On fixe det_order = 0 ce qui est en accord avec deterministic = 'co' (cf plus bas).
+    On prend k_ar_diff = 4 ou 6 en reprenant les valeurs trouvées plus bas avec select_order.
     '''
 
     # Préparation des données
@@ -107,7 +107,7 @@ def test_johansen(df):
     df_johansen = df[variables].dropna()
 
     # test de johansen
-    jres = coint_johansen(df_johansen, det_order=1, k_ar_diff=1)
+    jres = coint_johansen(df_johansen, det_order=0, k_ar_diff=4)
 
     # Affichage des résultats
     print("Statistique de trace (trace statistic):")
@@ -173,6 +173,7 @@ def selection_lag_order(df):
 
     '''
     Selection du nombre de lag optimal pour le modèle VECM via les critères AIC, BIC, FPE et HQIC
+    Choix de deterministic = 'co' d'après l'étude des séries en niveau et différenciées.
     '''
     
     # Préparation des données
@@ -180,7 +181,7 @@ def selection_lag_order(df):
     df_selection = df[variables].dropna()
 
     # Choix du nombre de lag
-    order_res = select_order(df_selection, maxlags=12, deterministic="li")
+    order_res = select_order(df_selection, maxlags=12, deterministic="co")
     return order_res.summary()
 
 
@@ -206,10 +207,10 @@ def VECM_entraine(df):
     '''
     Entraine un modèle VECM sur les données mises en entrée.
     Paramètres retenus pour le modèle :
-     - nombre de lag : 3
-     - rang de cointégration : 3
+     - nombre de lag : 6
+     - rang de cointégration : 1
 
-    On fixe deterministic = 'li' , comme pour la sélection du lag
+    On fixe deterministic = 'co' , comme pour la sélection du lag
     '''
 
     # Préparation des données
@@ -217,7 +218,7 @@ def VECM_entraine(df):
     df_entrainement = df[variables].dropna()
 
     # Entrainement
-    vecm_model = VECM(df_entrainement,k_ar_diff=3,coint_rank=3,deterministic='li')
+    vecm_model = VECM(df_entrainement,k_ar_diff=6,coint_rank=1,deterministic='co')
     vecm_fit = vecm_model.fit()
 
     return vecm_fit
@@ -381,6 +382,32 @@ def evaluation_Ljung_Box(df,model_fit):
     for i,column in enumerate(df.columns):
         for lag in range(1,13):
             ljung_box = acorr_ljungbox(residuals[:,i],lags=[lag],return_df=False)
-            ljung_box_results.loc[column,f'lag_{lag}']= ljung_box['lb_pvalue'].values[0]
+            ljung_box_results.loc[column,f'lag_{lag}']= round(ljung_box['lb_pvalue'].values[0],3)
     
     return(ljung_box_results)
+
+def normalite_jarque_bera(model_fit,alpha= 0.05):
+    '''
+    Test de normalité des résidus via Jarque Bera
+    '''
+
+    residuals = model_fit.resid
+    jb_test = jarque_bera(residuals)
+
+    if jb_test[1] > alpha :
+        return f'p-valeur : {jb_test[1]} > {alpha}. On accepte H0, les résidus suivent une loi normale'
+    else:
+        return f'p-valeur : {jb_test[1]} < {alpha}. On rejete H0, les résidus ne suivent pas une loi normale'
+   
+
+def test_stabilité(model_fit):
+    '''
+    Test de stabilité du modèle
+    '''
+    
+    eigenvalues = model_fit.alpha @ model_fit.beta.T
+
+    return eigenvalues
+
+
+
