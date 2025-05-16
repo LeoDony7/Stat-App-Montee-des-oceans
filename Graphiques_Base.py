@@ -29,6 +29,14 @@ def tracer_variable(dataframe, colonne):
 
 ## Tracé de toutes les variables
 
+def nettoyer_nom(variable):
+    suffixe = '_need_desaison'
+    if variable.endswith(suffixe):
+        return variable[:-len(suffixe)]
+    else:
+        return variable
+
+
 def tracer_df(dataframe):
 
     '''
@@ -47,7 +55,6 @@ def tracer_df(dataframe):
         plt.subplot(n // 2 + n % 2, 2, i)
         plt.plot(dataframe['year_month'], dataframe[column], label=column, linewidth=1.5)
         plt.title(column, fontsize=12)
-        '''plt.xlabel('Date', fontsize=10)'''
         plt.ylabel(column, fontsize=10)
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.xticks(fontsize=8,rotation=45)

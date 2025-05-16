@@ -56,9 +56,11 @@ DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
 
-DF_desaison = Base_desaison(DF_propre)
+'''DF_desaison = Base_desaison(DF_propre)
+'''
+'''DF_final = Base_filtre(DF_desaison)'''
 
-DF_final = Base_filtre(DF_desaison)
+tracer_df(DF_propre)
 
 '''colonne = 'antarctica_mass'
 plt.figure(figsize=(10, 5))
