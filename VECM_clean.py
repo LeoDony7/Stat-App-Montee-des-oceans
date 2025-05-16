@@ -10,6 +10,8 @@ from scipy.stats import norm
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.graphics.tsaplots import plot_acf
 
 ## Etape 1 : tester la stationnarité des séries
 
@@ -178,7 +180,7 @@ def selection_lag_order(df):
     df_selection = df[variables].dropna()
 
     # Choix du nombre de lag
-    order_res = select_order(df_selection, maxlags=12, deterministic="ci")
+    order_res = select_order(df_selection, maxlags=12, deterministic="li")
     return order_res.summary()
 
 
@@ -193,7 +195,7 @@ def selection_rank_coint(df,lag_opti):
     variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
     df_selection = df[variables].dropna()
 
-    res = select_coint_rank(df_selection, det_order=1, k_ar_diff=lag_opti, method="trace", signif=0.05)
+    res = select_coint_rank(df_selection, det_order=0, k_ar_diff=lag_opti, method="trace", signif=0.05)
     return res.rank
 
 
@@ -204,10 +206,10 @@ def VECM_entraine(df):
     '''
     Entraine un modèle VECM sur les données mises en entrée.
     Paramètres retenus pour le modèle :
-     - nombre de lag :3
+     - nombre de lag : 3
      - rang de cointégration : 3
 
-    On fixe deterministic = 'lo' , ce qui signifie qu'on suppose des constantes et des tendances linéaires potentiellement différentes pour chaque série.
+    On fixe deterministic = 'li' , comme pour la sélection du lag
     '''
 
     # Préparation des données
@@ -215,7 +217,7 @@ def VECM_entraine(df):
     df_entrainement = df[variables].dropna()
 
     # Entrainement
-    vecm_model = VECM(df_entrainement,k_ar_diff=3,coint_rank=3,deterministic='lo')
+    vecm_model = VECM(df_entrainement,k_ar_diff=3,coint_rank=3,deterministic='li')
     vecm_fit = vecm_model.fit()
 
     return vecm_fit
@@ -363,3 +365,22 @@ def evaluate_vecm_with_model(df, vecm_fit, variables, forecast_steps=12):
 
     return predicted, actual, rmse, mae
 
+
+def evaluation_Ljung_Box(df,model_fit):
+    '''
+    Test de Ljung Box de blancheur des résidus.
+    '''
+
+    variables = ['sea_level', 'sea_temperature', 'greenland_mass', 'antarctica_mass']
+    df = df[variables]
+
+    residuals = model_fit.resid
+
+    ljung_box_results = pd.DataFrame()
+
+    for i,column in enumerate(df.columns):
+        for lag in range(1,13):
+            ljung_box = acorr_ljungbox(residuals[:,i],lags=[lag],return_df=False)
+            ljung_box_results.loc[column,f'lag_{lag}']= ljung_box['lb_pvalue'].values[0]
+    
+    return(ljung_box_results)

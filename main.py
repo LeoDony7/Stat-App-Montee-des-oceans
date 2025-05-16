@@ -22,13 +22,13 @@ print(latex_table)'''
 
 
 
-DF = chargerBDD('Base_Statapp.csv')
+'''DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
 
 DF_desaison = Base_desaison(DF_propre)
 
-tracer_variable(DF_desaison,'sea_level')
+tracer_variable(DF_desaison,'sea_level')'''
 ##########################################################
 
 ##### Regression simple ######
@@ -51,7 +51,7 @@ Regression_simple(DF_final,'chlorophylle')
 
 ##### Régression multiple #####
 
-'''
+
 DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
@@ -60,8 +60,20 @@ DF_desaison = Base_desaison(DF_propre)
 
 DF_final = Base_filtre(DF_desaison)
 
+'''colonne = 'antarctica_mass'
+plt.figure(figsize=(10, 5))
+plt.plot(DF_final['year_month'], DF_final[colonne].diff(), label=colonne+'_diff', linewidth=1.5)
+plt.title(colonne+'_diff', fontsize=14)
+plt.xlabel('Date', fontsize=12)
+plt.ylabel(colonne+'_diff', fontsize=12)
+plt.grid(True, linestyle='--', alpha=0.6)
+xticks = DF_final['year_month'][::12]
+plt.xticks(xticks,rotation=45)
+plt.tight_layout()
+plt.legend()
+plt.show()'''
 
-import matplotlib.pyplot as plt
+'''import matplotlib.pyplot as plt
 
 def save_model_summary_as_image(summary, filename="regression_summary.png"):
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -72,8 +84,9 @@ def save_model_summary_as_image(summary, filename="regression_summary.png"):
     plt.close()
 
 summary = Regression_multiple(DF_final)
-save_model_summary_as_image(summary)
-'''
+print(summary)'''
+'''save_model_summary_as_image(summary)'''
+
 
 
 ###############################
