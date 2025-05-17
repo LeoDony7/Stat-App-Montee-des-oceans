@@ -52,15 +52,15 @@ Regression_simple(DF_final,'chlorophylle')
 ##### Régression multiple #####
 
 
-DF = chargerBDD('Base_Statapp.csv')
+'''DF = chargerBDD('Base_Statapp.csv')
 
 DF_propre = Base_nettoye(DF)
-
+'''
 '''DF_desaison = Base_desaison(DF_propre)
 '''
 '''DF_final = Base_filtre(DF_desaison)'''
 
-tracer_df(DF_propre)
+'''tracer_df(DF_propre)'''
 
 '''colonne = 'antarctica_mass'
 plt.figure(figsize=(10, 5))
@@ -259,3 +259,24 @@ print(jres.eig)
 '''
 
 
+df = pd.read_csv('Base_clean.csv')
+
+import pandas as pd
+
+def get_standard_deviations(df):
+    """
+    Calcule l'écart type pour chaque variable numérique du DataFrame,
+    sauf la colonne 'year_month'.
+
+    Paramètres :
+    df (pd.DataFrame) : le DataFrame contenant les données.
+
+    Retour :
+    pd.Series : les écarts types pour chaque variable.
+    """
+    # On supprime la colonne 'year_month' si elle existe
+    df_numeric = df.drop(columns=['year_month'], errors='ignore')
+    return df_numeric.std()
+
+stds = get_standard_deviations(df)
+print(stds)
